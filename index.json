@@ -1,8 +1,8 @@
 {
-  "name": "老窝的 MusicFree 插件",
-  "author": "老窝",
-  "description": "自用 WebDAV 插件（支持递归扫描子目录）",
+  "name": "老窝的MusicFree插件",
+  "author": "laowo",
+  "description": "自用WebDAV插件（支持递归扫描子目录）",
   "plugins": [
-    {"name":"WebDAV-R","url":"https://raw.githubusercontent.com/liliangjie91/musicfree-plugins/main/plugins/webdav.js","version":"0.0.3"}
+    {"name":"WebDAV-R","url":"https://raw.githubusercontent.com/liliangjie91/musicfree-plugins/main/plugins/webdav.js","version":"0.1.0"}
   ]
 }

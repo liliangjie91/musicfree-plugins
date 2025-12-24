@@ -158,7 +158,7 @@ module.exports = {
             name: "最大扫描深度",
         }
     ],
-    version: "0.0.3",
+    version: "0.1.0",
     supportedSearchType: ["music"],
     // srcUrl: "https://gitee.com/maotoumao/MusicFreePlugins/raw/v0.1/dist/webdav/index.js",
     srcUrl: "https://raw.githubusercontent.com/liliangjie91/musicfree-plugins/main/plugins/webdav.js",
