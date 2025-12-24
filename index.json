@@ -3,12 +3,6 @@
   "author": "老窝",
   "description": "自用 WebDAV 插件（支持递归扫描子目录）",
   "plugins": [
-    {
-      "name": "WebDAV-R",
-      "platform": "WebDAV-R",
-      "version": "0.0.1",
-      "author": "laowo",
-      "src": "https://raw.githubusercontent.com/liliangjie91/musicfree-plugins/main/plugins/webdav.js"
-    }
+    {"name":"WebDAV-R","url":"https://raw.githubusercontent.com/liliangjie91/musicfree-plugins/main/plugins/webdav.js","version":"0.0.1"}
   ]
 }
