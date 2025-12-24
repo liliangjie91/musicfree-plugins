@@ -81,20 +81,20 @@ async function fetchMetaForItem(client, item, maxMetaBytes) {
             title: (metadata && metadata.common && metadata.common.title) || item.basename,
             artist: (metadata && metadata.common && metadata.common.artist) || "未知作者",
             album: (metadata && metadata.common && metadata.common.album) || "未知专辑",
-            duration: (metadata && metadata.format && metadata.format.duration) || 0,
+            // duration: (metadata && metadata.format && metadata.format.duration) || 0,
             id: item.filename,
         };
 
         cachedData.fileInfoCache = cachedData.fileInfoCache || {};
         cachedData.fileInfoCache[item.filename] = info;
-
+        // console.log(`Fetched metadata for ${item.basename}:`, info);
         return info;
     } catch (e) {
         return {
             title: item.basename,
             artist: "未知作者",
             album: "未知专辑",
-            duration: 0,
+            // duration: 0,
             id: item.filename,
         };
     }
@@ -253,7 +253,7 @@ module.exports = {
             name: "是否获取元数据",
         }
     ],
-    version: "0.1.2",
+    version: "0.1.3",
     supportedSearchType: ["music"],
     // srcUrl: "https://gitee.com/maotoumao/MusicFreePlugins/raw/v0.1/dist/webdav/index.js",
     srcUrl: "https://raw.githubusercontent.com/liliangjie91/musicfree-plugins/main/plugins/webdav.js",
