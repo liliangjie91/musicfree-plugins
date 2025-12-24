@@ -93,8 +93,8 @@ async function fetchMetaForItem(client, item, maxMetaBytes) {
         return {
             title: item.basename,
             id: item.filename,
-            artist: "未知作者",
-            album: "未知专辑",
+            artist: "未知作者2",
+            album: "未知专辑2",
             // duration: 0,
         };
     }
@@ -254,7 +254,7 @@ module.exports = {
             name: "是否获取元数据",
         }
     ],
-    version: "0.1.5",
+    version: "0.1.6",
     supportedSearchType: ["music"],
     // srcUrl: "https://gitee.com/maotoumao/MusicFreePlugins/raw/v0.1/dist/webdav/index.js",
     srcUrl: "https://raw.githubusercontent.com/liliangjie91/musicfree-plugins/main/plugins/webdav.js",
