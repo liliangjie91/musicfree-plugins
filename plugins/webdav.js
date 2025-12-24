@@ -80,8 +80,8 @@ async function fetchMetaForItem(client, item, maxMetaBytes) {
         const info = {
             title: (metadata && metadata.common && metadata.common.title) || item.basename,
             id: item.filename,
-            artist: (metadata && metadata.common && metadata.common.artist) || "未知作者",
-            album: (metadata && metadata.common && metadata.common.album) || "未知专辑",
+            artist: (metadata && metadata.common && metadata.common.artist) || "未知作者1",
+            album: (metadata && metadata.common && metadata.common.album) || "未知专辑1",
             // duration: (metadata && metadata.format && metadata.format.duration) || 0,
         };
 
@@ -254,7 +254,7 @@ module.exports = {
             name: "是否获取元数据",
         }
     ],
-    version: "0.1.4",
+    version: "0.1.5",
     supportedSearchType: ["music"],
     // srcUrl: "https://gitee.com/maotoumao/MusicFreePlugins/raw/v0.1/dist/webdav/index.js",
     srcUrl: "https://raw.githubusercontent.com/liliangjie91/musicfree-plugins/main/plugins/webdav.js",
