@@ -25,33 +25,53 @@ function getClient() {
         password,
     });
 }
+
+async function scanDirRecursive(client, dir, result) {
+    let items;
+    try {
+        items = await client.getDirectoryContents(dir);
+    } catch (e) {
+        return;
+    }
+
+    for (const it of items) {
+        if (it.type === "file" && it.mime && it.mime.startsWith("audio")) {
+            result.push(it);
+        } else if (it.type === "directory") {
+            await scanDirRecursive(client, it.filename, result);
+        }
+    }
+}
+
 async function searchMusic(query) {
     var _a, _b;
     const client = getClient();
+    if (!client) return { isEnd: true, data: [] };
+
     if (!cachedData.cacheFileList) {
         const searchPathList = ((_a = cachedData.searchPathList) === null || _a === void 0 ? void 0 : _a.length)
             ? cachedData.searchPathList
             : ["/"];
+
         let result = [];
+
         for (let search of searchPathList) {
-            try {
-                const fileItems = (await client.getDirectoryContents(search)).filter((it) => it.type === "file" && it.mime.startsWith("audio"));
-                result = [...result, ...fileItems];
-            }
-            catch (_c) { }
+            await scanDirRecursive(client, search, result);
         }
+
         cachedData.cacheFileList = result;
     }
+
     return {
         isEnd: true,
-        data: ((_b = cachedData.cacheFileList) !== null && _b !== void 0 ? _b : [])
+        data: ((_b = cachedData.cacheFileList) ?? [])
             .filter((it) => it.basename.includes(query))
             .map((it) => ({
-            title: it.basename,
-            id: it.filename,
-            artist: "未知作者",
-            album: "未知专辑",
-        })),
+                title: it.basename,
+                id: it.filename,
+                artist: "未知作者",
+                album: "未知专辑",
+            })),
     };
 }
 async function getTopLists() {
@@ -100,7 +120,7 @@ module.exports = {
             name: "存放歌曲的路径",
         },
     ],
-    version: "0.0.1",
+    version: "0.0.2",
     supportedSearchType: ["music"],
     // srcUrl: "https://gitee.com/maotoumao/MusicFreePlugins/raw/v0.1/dist/webdav/index.js",
     srcUrl: "https://raw.githubusercontent.com/liliangjie91/musicfree-plugins/main/plugins/webdav.js",
