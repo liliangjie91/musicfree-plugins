@@ -78,7 +78,7 @@ async function getTopListDetail(topListItem) {
     };
 }
 module.exports = {
-    platform: "WebDAV",
+    platform: "WebDAV-R",
     author: "laowo",
     description: "使用此插件前先配置用户变量",
     userVariables: [

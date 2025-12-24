@@ -5,7 +5,7 @@
   "plugins": [
     {
       "name": "WebDAV-R",
-      "platform": "WebDAV",
+      "platform": "WebDAV-R",
       "version": "0.0.1",
       "author": "laowo",
       "src": "https://raw.githubusercontent.com/liliangjie91/musicfree-plugins/main/plugins/webdav.js"
