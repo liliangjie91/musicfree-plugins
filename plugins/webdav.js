@@ -36,59 +36,100 @@ function getClient() {
     });
 }
 
-// 批量解析音乐文件信息
-async function getMusicInfoBatch(client, fileItems) {
-    // 并发限制，避免同时打开太多流
-    const CONCURRENCY = 5;
-    const results = [];
-    let index = 0;
-
-    async function worker() {
-        while (index < fileItems.length) {
-            const i = index++;
-            const item = fileItems[i];
-
-            // 如果已经缓存，直接使用
-            if (cachedData.fileInfoCache?.[item.filename]) {
-                results[i] = cachedData.fileInfoCache[item.filename];
-                continue;
-            }
-
-            try {
-                const stream = await client.createReadStream(item.filename, { start: 0, end: 128 * 1024 }); // 只读前128KB
-                const metadata = await mm.parseStream(stream, { duration: true }, { skipCovers: true });
-                stream.destroy();
-
-                const info = {
-                    title: metadata.common.title || item.basename,
-                    artist: metadata.common.artist || "未知作者",
-                    album: metadata.common.album || "未知专辑",
-                    duration: metadata.format.duration || 0,
-                    id: item.filename,
-                };
-
-                // 缓存结果
-                cachedData.fileInfoCache = cachedData.fileInfoCache || {};
-                cachedData.fileInfoCache[item.filename] = info;
-
-                results[i] = info;
-            } catch (e) {
-                results[i] = {
-                    title: item.basename,
-                    artist: "未知作者",
-                    album: "未知专辑",
-                    duration: 0,
-                    id: item.filename,
-                };
-            }
+// 读取远端文件前 N 字节到 Buffer（客户端请求的并发需外部控制）
+async function readFirstBytes(client, path, maxBytes) {
+    // 优先使用带范围的读取（若 webdav 客户端/服务端支持），避免请求整个文件
+    const end = Math.max(0, maxBytes - 1);
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        let stream;
+        try {
+            // 有些 webdav 实现支持 start/end 参数（之前版本使用过），优先使用它
+            stream = client.createReadStream(path, { start: 0, end });
+        } catch (err) {
+            return reject(err);
         }
+
+        stream.on('data', (chunk) => {
+            chunks.push(chunk);
+        });
+
+        stream.on('end', () => {
+            const buf = Buffer.concat(chunks);
+            // 如果服务器返回的字节比请求的多（极少见），只截取前 maxBytes 字节
+            resolve(buf.length > maxBytes ? buf.slice(0, maxBytes) : buf);
+        });
+
+        stream.on('error', (err) => {
+            reject(err);
+        });
+    });
+}
+
+// 从单个 fileItem 获取元数据（包含缓存逻辑）
+async function fetchMetaForItem(client, item, maxMetaBytes) {
+    // 如果已经缓存，直接使用
+    if (cachedData.fileInfoCache?.[item.filename]) {
+        return cachedData.fileInfoCache[item.filename];
     }
 
-    // 启动并发 worker
-    const workers = Array(CONCURRENCY).fill(null).map(() => worker());
-    await Promise.all(workers);
+    try {
+        const buffer = await readFirstBytes(client, item.filename, maxMetaBytes);
+        const metadata = await mm.parseBuffer(buffer, undefined, { duration: true, skipCovers: true });
 
+        const info = {
+            title: (metadata && metadata.common && metadata.common.title) || item.basename,
+            artist: (metadata && metadata.common && metadata.common.artist) || "未知作者",
+            album: (metadata && metadata.common && metadata.common.album) || "未知专辑",
+            duration: (metadata && metadata.format && metadata.format.duration) || 0,
+            id: item.filename,
+        };
+
+        cachedData.fileInfoCache = cachedData.fileInfoCache || {};
+        cachedData.fileInfoCache[item.filename] = info;
+
+        return info;
+    } catch (e) {
+        return {
+            title: item.basename,
+            artist: "未知作者",
+            album: "未知专辑",
+            duration: 0,
+            id: item.filename,
+        };
+    }
+}
+
+// 并发分块实现：对 fileItems 按块并发处理（每块内并发），块之间串行
+async function getMusicInfoBatchChunked(client, fileItems, concurrency = 3, maxMetaBytes = 128 * 1024) {
+    const results = new Array(fileItems.length);
+    for (let i = 0; i < fileItems.length; i += concurrency) {
+        const chunk = fileItems.slice(i, i + concurrency);
+        const promises = chunk.map((item) => fetchMetaForItem(client, item, maxMetaBytes));
+        const metas = await Promise.all(promises);
+        for (let j = 0; j < metas.length; j++) {
+            results[i + j] = metas[j];
+        }
+    }
     return results;
+}
+
+// 顺序实现：一个一个处理，最保守但最稳健
+async function getMusicInfoBatchSequential(client, fileItems, maxMetaBytes = 128 * 1024) {
+    const results = [];
+    for (let i = 0; i < fileItems.length; i++) {
+        const item = fileItems[i];
+        const meta = await fetchMetaForItem(client, item, maxMetaBytes);
+        results[i] = meta;
+    }
+    return results;
+}
+
+// 默认导出的兼容函数：使用 chunked 实现（可以改成调用 sequential）
+async function getMusicInfoBatch(client, fileItems) {
+    // 默认并发数，若需要可在 userVariables 中暴露或修改为其它值
+    const DEFAULT_CONCURRENCY = 3;
+    return await getMusicInfoBatchChunked(client, fileItems, DEFAULT_CONCURRENCY);
 }
 
 async function outputMusic(client, fileItems) {
@@ -212,7 +253,7 @@ module.exports = {
             name: "是否获取元数据",
         }
     ],
-    version: "0.1.1",
+    version: "0.1.2",
     supportedSearchType: ["music"],
     // srcUrl: "https://gitee.com/maotoumao/MusicFreePlugins/raw/v0.1/dist/webdav/index.js",
     srcUrl: "https://raw.githubusercontent.com/liliangjie91/musicfree-plugins/main/plugins/webdav.js",
