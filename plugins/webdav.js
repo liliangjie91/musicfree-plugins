@@ -79,10 +79,10 @@ async function fetchMetaForItem(client, item, maxMetaBytes) {
 
         const info = {
             title: (metadata && metadata.common && metadata.common.title) || item.basename,
+            id: item.filename,
             artist: (metadata && metadata.common && metadata.common.artist) || "未知作者",
             album: (metadata && metadata.common && metadata.common.album) || "未知专辑",
             // duration: (metadata && metadata.format && metadata.format.duration) || 0,
-            id: item.filename,
         };
 
         cachedData.fileInfoCache = cachedData.fileInfoCache || {};
@@ -92,10 +92,10 @@ async function fetchMetaForItem(client, item, maxMetaBytes) {
     } catch (e) {
         return {
             title: item.basename,
+            id: item.filename,
             artist: "未知作者",
             album: "未知专辑",
             // duration: 0,
-            id: item.filename,
         };
     }
 }
@@ -133,16 +133,17 @@ async function getMusicInfoBatch(client, fileItems) {
 }
 
 async function outputMusic(client, fileItems) {
-    if (cachedData.getMeta) {
-        return await getMusicInfoBatch(client, fileItems);
-    } else {
-        return fileItems.map((it) => ({
-            title: it.basename,
-            id: it.filename,
-            artist: "未知作者",
-            album: "未知专辑",
-        }));
-    }
+    return await getMusicInfoBatch(client, fileItems);
+    // if (cachedData.getMeta) {
+    //     return await getMusicInfoBatch(client, fileItems);
+    // } else {
+    //     return fileItems.map((it) => ({
+    //         title: it.basename,
+    //         id: it.filename,
+    //         artist: "未知作者",
+    //         album: "未知专辑",
+    //     }));
+    // }
 }
 
 async function scanDirRecursive(client, dir, result, depth, maxDepth, visited) {
@@ -253,7 +254,7 @@ module.exports = {
             name: "是否获取元数据",
         }
     ],
-    version: "0.1.3",
+    version: "0.1.4",
     supportedSearchType: ["music"],
     // srcUrl: "https://gitee.com/maotoumao/MusicFreePlugins/raw/v0.1/dist/webdav/index.js",
     srcUrl: "https://raw.githubusercontent.com/liliangjie91/musicfree-plugins/main/plugins/webdav.js",
