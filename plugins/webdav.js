@@ -53,6 +53,11 @@ async function scanDirRecursive(client, dir, result, depth, maxDepth, visited) {
     }
 }
 
+function getLastDirName(filename) {
+    if (!filename) return '';
+    const parts = filename.split('/').filter(Boolean);
+    return parts.length >= 2 ? parts[parts.length - 2] : '';
+}
 
 async function searchMusic(query) {
     var _a, _b;
@@ -81,7 +86,7 @@ async function searchMusic(query) {
                 title: it.basename,
                 id: it.filename,
                 artist: "未知作者",
-                album: "未知专辑",
+                album: getLastDirName(it.filename) || "未知专辑",
             })),
     };
 }
@@ -102,13 +107,13 @@ async function getTopListDetail(topListItem) {
     const visited = new Set();
     let result = [];
     await scanDirRecursive(client, topListItem.id, result, 0, cachedData.maxDepth, visited);
-
+    
     return {
         musicList: result.map((it) => ({
             title: it.basename,
             id: it.filename,
             artist: "未知作者",
-            album: "未知专辑",
+            album: getLastDirName(it.filename) || "未知专辑",
         })),
     };
 
@@ -140,7 +145,7 @@ module.exports = {
             name: "最大扫描深度",
         }
     ],
-    version: "0.2.0",
+    version: "0.2.1",
     supportedSearchType: ["music"],
     // srcUrl: "https://gitee.com/maotoumao/MusicFreePlugins/raw/v0.1/dist/webdav/index.js",
     srcUrl: "https://raw.githubusercontent.com/liliangjie91/musicfree-plugins/main/plugins/webdav.js",
