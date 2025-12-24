@@ -133,17 +133,16 @@ async function getMusicInfoBatch(client, fileItems) {
 }
 
 async function outputMusic(client, fileItems) {
-    return await getMusicInfoBatch(client, fileItems);
-    // if (cachedData.getMeta) {
-    //     return await getMusicInfoBatch(client, fileItems);
-    // } else {
-    //     return fileItems.map((it) => ({
-    //         title: it.basename,
-    //         id: it.filename,
-    //         artist: "未知作者",
-    //         album: "未知专辑",
-    //     }));
-    // }
+    if (cachedData.getMeta) {
+        return await getMusicInfoBatch(client, fileItems);
+    } else {
+        return fileItems.map((it) => ({
+            title: it.basename,
+            id: it.filename,
+            artist: "未知作者",
+            album: "未知专辑",
+        }));
+    }
 }
 
 async function scanDirRecursive(client, dir, result, depth, maxDepth, visited) {
@@ -254,7 +253,7 @@ module.exports = {
             name: "是否获取元数据",
         }
     ],
-    version: "0.1.7",
+    version: "0.1.8",
     supportedSearchType: ["music"],
     // srcUrl: "https://gitee.com/maotoumao/MusicFreePlugins/raw/v0.1/dist/webdav/index.js",
     srcUrl: "https://raw.githubusercontent.com/liliangjie91/musicfree-plugins/main/plugins/webdav.js",
