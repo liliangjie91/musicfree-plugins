@@ -87,15 +87,20 @@ async function getTopLists() {
 }
 async function getTopListDetail(topListItem) {
     const client = getClient();
-    const fileItems = (await client.getDirectoryContents(topListItem.id)).filter((it) => it.type === "file" && it.mime.startsWith("audio"));
+
+
+    let result = [];
+    await scanDirRecursive(client, topListItem.id, result);
+
     return {
-        musicList: fileItems.map((it) => ({
+        musicList: result.map((it) => ({
             title: it.basename,
             id: it.filename,
             artist: "未知作者",
             album: "未知专辑",
         })),
     };
+
 }
 module.exports = {
     platform: "WebDAV-R",
@@ -120,7 +125,7 @@ module.exports = {
             name: "存放歌曲的路径",
         },
     ],
-    version: "0.0.2",
+    version: "0.0.3",
     supportedSearchType: ["music"],
     // srcUrl: "https://gitee.com/maotoumao/MusicFreePlugins/raw/v0.1/dist/webdav/index.js",
     srcUrl: "https://raw.githubusercontent.com/liliangjie91/musicfree-plugins/main/plugins/webdav.js",
