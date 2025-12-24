@@ -4,18 +4,24 @@ const webdav_1 = require("webdav");
 let cachedData = {};
 function getClient() {
     var _a, _b, _c;
-    const { url, username, password, searchPath } = (_b = (_a = env === null || env === void 0 ? void 0 : env.getUserVariables) === null || _a === void 0 ? void 0 : _a.call(env)) !== null && _b !== void 0 ? _b : {};
+    // const { url, username, password, searchPath, maxDepth } = (_b = (_a = env === null || env === void 0 ? void 0 : env.getUserVariables) === null || _a === void 0 ? void 0 : _a.call(env)) !== null && _b !== void 0 ? _b : {};
+    const { url, username, password, searchPath, maxDepth } = env?.getUserVariables?.() ?? {};
     if (!(url && username && password)) {
         return null;
     }
+    const depth = parseInt(maxDepth, 10);
+    const parsedDepth = Number.isNaN(depth) ? 5 : depth;
+
     if (!(cachedData.url === url &&
         cachedData.username === username &&
         cachedData.password === password &&
-        cachedData.searchPath === searchPath)) {
+        cachedData.searchPath === searchPath &&
+        cachedData.maxDepth === parsedDepth)) {
         cachedData.url = url;
         cachedData.username = username;
         cachedData.password = password;
         cachedData.searchPath = searchPath;
+        cachedData.maxDepth = parsedDepth;
         cachedData.searchPathList = (_c = searchPath === null || searchPath === void 0 ? void 0 : searchPath.split) === null || _c === void 0 ? void 0 : _c.call(searchPath, ",");
         cachedData.cacheFileList = null;
     }
@@ -26,22 +32,45 @@ function getClient() {
     });
 }
 
-async function scanDirRecursive(client, dir, result) {
+// async function scanDirRecursive(client, dir, result) {
+//     let items;
+//     try {
+//         items = await client.getDirectoryContents(dir);
+//     } catch (e) {
+//         return;
+//     }
+
+//     for (const it of items) {
+//         if (it.type === "file" && it.mime && it.mime.startsWith("audio")) {
+//             result.push(it);
+//         } else if (it.type === "directory") {
+//             await scanDirRecursive(client, it.filename, result);
+//         }
+//     }
+// }
+
+async function scanDirRecursive(client, dir, result, depth, maxDepth, visited) {
+    if (visited.has(dir)) return;
+    visited.add(dir);
+
+    if (maxDepth >= 0 && depth > maxDepth) return;
+
     let items;
     try {
         items = await client.getDirectoryContents(dir);
-    } catch (e) {
+    } catch {
         return;
     }
 
     for (const it of items) {
-        if (it.type === "file" && it.mime && it.mime.startsWith("audio")) {
+        if (it.type === "file" && it.mime?.startsWith("audio")) {
             result.push(it);
         } else if (it.type === "directory") {
-            await scanDirRecursive(client, it.filename, result);
+            await scanDirRecursive(client,it.filename,result,depth + 1,maxDepth,visited);
         }
     }
 }
+
 
 async function searchMusic(query) {
     var _a, _b;
@@ -54,9 +83,9 @@ async function searchMusic(query) {
             : ["/"];
 
         let result = [];
-
+        const visited = new Set();
         for (let search of searchPathList) {
-            await scanDirRecursive(client, search, result);
+            await scanDirRecursive(client, search, result, 0, cachedData.maxDepth, visited);
         }
 
         cachedData.cacheFileList = result;
@@ -88,9 +117,9 @@ async function getTopLists() {
 async function getTopListDetail(topListItem) {
     const client = getClient();
 
-
+    const visited = new Set();
     let result = [];
-    await scanDirRecursive(client, topListItem.id, result);
+    await scanDirRecursive(client, topListItem.id, result, 0, cachedData.maxDepth, visited);
 
     return {
         musicList: result.map((it) => ({
@@ -105,7 +134,7 @@ async function getTopListDetail(topListItem) {
 module.exports = {
     platform: "WebDAV-R",
     author: "laowo",
-    description: "使用此插件前先配置用户变量",
+    description: "使用此插件前先配置用户变量；存放歌曲的路径可用英文逗号分隔多个；最大扫描深度(-1:无限,0:仅当前目录,默认5)",
     userVariables: [
         {
             key: "url",
@@ -124,6 +153,10 @@ module.exports = {
             key: "searchPath",
             name: "存放歌曲的路径",
         },
+        {
+            key: "maxDepth",
+            name: "最大扫描深度",
+        }
     ],
     version: "0.0.3",
     supportedSearchType: ["music"],
